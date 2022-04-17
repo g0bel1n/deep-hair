@@ -12,12 +12,15 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def noStoredFace(face_storage) -> bool:
+def noStoredFace(face_storage: list[float]) -> bool:
     """
-    Return True if there are no stored face images in the storedFace folder
+    > This function returns True if there are no faces stored in the face storage
+
+    :param face_storage: a list of faces that have been detected and stored
     :return: A boolean value.
     """
-    return len(face_storage) == 0
+
+    return not face_storage
 
 
 class Chair:
