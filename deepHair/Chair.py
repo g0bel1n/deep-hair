@@ -2,12 +2,9 @@ import io
 import itertools
 import logging
 from datetime import datetime
-from tabnanny import check
-from time import time
 
 import numpy as np
 import yaml
-from cv2 import mean
 from deepface import DeepFace
 from deepface.commons import distance as dst
 from deepface.detectors import FaceDetector
@@ -38,9 +35,9 @@ class Chair:
         self.STORAGE_FREQUENCY = config["STORAGE FREQUENCY"]
         self.__NecessaryAmountOfStoredFaces = config["NecessaryAmountOfStoredFaces"]
         self.__NecessaryAmountOfSamples = config["NecessaryAmountOfSamples"]
+
         self.leftCounter: int = 0
         self.nbStoredFacesForCurrentCustomer = 0
-
         self.idVerified = False
         self.__customerID = 0
         self.samples: list = []
