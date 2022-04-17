@@ -1,72 +1,117 @@
+import argparse
 import logging
-import os
+import multiprocessing
 import time
+
 import cv2
-from deepHair.Chair import Chair
-from deepface.detectors import FaceDetector
-from deepface import DeepFace
 import yaml
+import pandas as pd
+from pandas.errors import EmptyDataError
+from deepface import DeepFace
+from deepface.detectors import FaceDetector
+from VideoThread import VideoThread
+
+from deepHair.Chair import Chair
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-#TODO 
+# TODO
 # - Multithread for multiple chairs and constant video flow
 # - improve sampling with subclasses Sample() etc
 # - Make yolov4-tiny work
 
-with open('config.yml', 'r') as file:
+with open("config.yml", "r") as file:
     config = yaml.safe_load(file)
 
-print(config["model_name"])
-
-start_model_build = time.perf_counter()
-model = DeepFace.build_model(config['model_name'])
-face_detector = FaceDetector.build_model(config['detector_backend'])
-
-logger.info(f'Built model in {time.perf_counter()-start_model_build} sec.')
-    
+cameras = config["cameras"]
 
 
-def runDeepHair_FaceMatcher(source: str) -> tuple[int, float]:
-    chair = Chair([0,2400,800,2400],1, config=config)
+def run():
+    """
+    > For each camera in the config file, start a process that will run the `process_task` function with
+    the camera's config and the main config as arguments
+    """
+    Processes: list[multiprocessing.Process] = []
 
-    cap = cv2.VideoCapture(source)
-    fps = cap.get(cv2.CAP_PROP_FPS) # OpenCV2 version 2 used "CV_CAP_PROP_FPS"
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = frame_count/fps
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
-    t1 = 0
+    for camera in cameras:
+        Processes.append(
+            multiprocessing.Process(
+                target=process_task, args=(config["cameras"][camera], config)
+            )
+        )
+        Processes[-1].start()
 
-    while True:
-        t0 = time.time()
-        videoTime = int(cap.get(cv2.CAP_PROP_POS_FRAMES))/fps
-        ret, frame = cap.read()
-        
-        #print(frame.shape)
-        if ret : 
-            cv2.imshow('frame', frame[0:2400,800:2400,:])
-        else : break
-        if t0-t1>10: 
-            t1 = time.time()
-            #print(f' affichage {t1-t0}')
-            
+    for process in Processes:
+        process.join()
+
+
+def process_task(camera: dict, config: dict):
+    """
+    It takes a camera and a config, builds a model and a face detector, then starts a video thread and a
+    video shower, and while the video thread is running, it updates the chairs with the frame, the video
+    time, the model, and the face detector, and then it draws a rectangle around the chair area and
+    shows the frame
+
+    :param camera: dict
+    :type camera: dict
+    :param config: dict = {
+    :type config: dict
+    """
+
+    start_model_build = time.perf_counter()
+    model = DeepFace.build_model(config["model_name"])
+    face_detector = FaceDetector.build_model(config["detector_backend"])
+
+    logger.info(f"Built model in {time.perf_counter()-start_model_build} sec.")
+
+    chairs: list[Chair] = [
+        Chair(camera["chairs"][chair], chair, config) for chair in camera["chairs"]
+    ]
+
+    videoThread = VideoThread(camera["source"]).start()
+
+    while not (videoThread.stopped):
+
+        frame = videoThread.frame
+        videoTime = videoThread.videoTime
+
+        for chair in chairs:
             chair.update(frame, videoTime, model, face_detector)
+            frame = cv2.rectangle(
+                frame,
+                (chair.AREA[2], chair.AREA[0]),
+                (chair.AREA[3], chair.AREA[1]),
+                (255, 0, 0),
+                4,
+            )
 
-            #print('updated')
-
-            #print(time.time()-t1)
-        
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cap.release()
+        cv2.imshow("frame", frame)
+        cv2.waitKey(1)
 
 
+def main():
+    """
+    It reads the number of customers in the database, runs the main function, and then reads the number
+    of customers in the database again. It then prints the difference between the two numbers, and the
+    time it took to run the main function
+    """
 
-    cv2.destroyAllWindows()
-    return chair._Chair__customerID, videoTime
+    try:
+        df = pd.read_csv(config["customers file"])
+        initial_nb_customer = df.shape[0]
+    except EmptyDataError:
+        initial_nb_customer = 0
+    run()
+    try:
+        df = pd.read_csv(config["customers file"])
+        nb_customer = df.shape[0]
+    except EmptyDataError:
+        nb_customer = 0
+    print(
+        f"There was {nb_customer-initial_nb_customer} customers during execution. It took {time.perf_counter()-start} "
+    )
 
-if __name__ =='__main__':
-    source = 'true_test.mp4'
-    start  = time.time()
-    numberOfCustomer, videoTime = runDeepHair_FaceMatcher(source = source )
-    print(f'There was {numberOfCustomer} customers in the {source}. It took {time.time()-start} seconds and the video was {videoTime} seconds long ')
+
+if __name__ == "__main__":
+    main()

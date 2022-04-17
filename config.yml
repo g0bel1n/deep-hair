@@ -1,12 +1,24 @@
 model_path : 'models'
 faces_bank_path : 'deepHair/face_storage.yml'
+customers file: 'deepHair/customers.csv'
 detector_backend : 'retinaface'
-model_name : 'Facenet'
+model_name : 'Facenet512'
 distance_metric : 'cosine'
 SAMPLING FREQUENCY : 15
 STORAGE FREQUENCY : 15
 NecessaryAmountOfStoredFaces : 3
 NecessaryAmountOfSamples: 3
-nb_frame_to_consider_left : 3
+nb_frame_to_consider_left : 5
+cameras : {
+  0:{
+    source : '/Volumes/WD_BLACK/camera_deep_hair/hiv00011.mp4',
+    chairs : {
+      0 : [100,1000,900,1920],
+      1 : [500,950, 300,800]
+      }
+      
+    }
+}
+
 
 

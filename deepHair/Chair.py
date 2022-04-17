@@ -1,8 +1,7 @@
-import io
+from asyncio import create_task
 import itertools
 import logging
-from datetime import datetime
-
+from datetime import date, datetime, time
 import numpy as np
 import yaml
 from deepface import DeepFace
@@ -46,10 +45,9 @@ class Chair:
             config["model_name"], config["distance_metric"]
         )
 
-        try:
-            with open(config["faces_bank_path"], "r") as storage_file:
-                self.face_storage = yaml.safe_load(storage_file)
-        except io.UnsupportedOperation:
+        with open(config["faces_bank_path"], "r") as storage_file:
+            self.face_storage = yaml.safe_load(storage_file)
+        if self.face_storage is None:
             self.face_storage = {}
 
     def __newCustomer(self):  # potentially
@@ -57,6 +55,8 @@ class Chair:
         The __newCustomer function is a private function that is used to create a new customer
         """
         logger.info("New customer !")
+        with open(self.config["customers file"], "a") as file:
+            file.write(f"{self.id},{datetime.now()}\n")
         self.__customerID += 1
 
     def getUpdatedConditions(
@@ -76,9 +76,9 @@ class Chair:
         someoneJustLeft = self.leftCounter > self.config["nb_frame_to_consider_left"]
 
         someoneIsSitting = not stateChanged and self.__isOccupied
-        enoughSampleToCheck = len(self.samples) == self.__NecessaryAmountOfSamples
+        enoughSampleToCheck = len(self.samples) >= self.__NecessaryAmountOfSamples
         mustStoreFace = (
-            self.nbStoredFacesForCurrentCustomer <= self.__NecessaryAmountOfStoredFaces
+            self.nbStoredFacesForCurrentCustomer < self.__NecessaryAmountOfStoredFaces
         )
 
         return (
@@ -117,10 +117,10 @@ class Chair:
                 )
                 self.samples.append(face_repr)
                 self.timeLastSample = videoTime
-                logger.info("Sampled a face")
+                logger.info(f"{self.id} : Sampled a face")
             except ValueError:
                 self.timeLastSample = videoTime
-                logger.info("Did not detect any face")
+                logger.info(f"{self.id} : Did not detect any face")
 
     def storeFace(self, videoTime, model):
         if videoTime - self.timeLastStore > self.STORAGE_FREQUENCY:
@@ -136,10 +136,10 @@ class Chair:
                 ] = face_repr
                 self.timeLastStore = videoTime
                 self.nbStoredFacesForCurrentCustomer += 1
-                logger.info("Stored a face")
+                logger.info(f"{self.id} : Stored a face")
             except ValueError:
                 self.timeLastStore = videoTime
-                logger.info("Did not detect any face")
+                logger.info(f"{self.id} : Did not detect any face")
 
     def verifyNewCustomer(self) -> bool:
 
@@ -149,11 +149,11 @@ class Chair:
             computed_distance = dst.findCosineDistance(source, test)
             if computed_distance < self.threshold:
                 # if there is match
-                logger.info("The person seated is not a new customer")
+                logger.info(f"{self.id} : The person seated is not a new customer")
                 return False
 
         self.__newCustomer()
-        logger.info("The person seated is a new customer")
+        logger.info(f"{self.id} : The person seated is a new customer")
         return True
 
     def cleanLastPersonVariables(self):
@@ -179,7 +179,10 @@ class Chair:
         newState = (
             len(
                 FaceDetector.detect_faces(
-                    face_detector, self.config["detector_backend"], img, align=False
+                    face_detector,
+                    self.config["detector_backend"],
+                    self.image,
+                    align=False,
                 )
             )
             > 0
@@ -192,13 +195,11 @@ class Chair:
             enoughSampleToCheck,
             mustStoreFace,
         ) = self.getUpdatedConditions(newState=newState)
-        logger.info(
-            f"Nb samples : {len(self.samples)}, NB_face stored : {len(self.face_storage)}"
-        )
+
         if someoneJustSat:
-            logger.info("Someone just sat")
+            logger.info(f"{self.id} : Someone just sat")
             if noStoredFace(self.face_storage):
-                logger.info("No stored faces")
+                logger.info(f"{self.id} : No stored faces")
                 # If there is no Stored Face then the customer is obviously a new customer (the first)
                 self.__newCustomer()
                 self.idVerified = True
@@ -206,10 +207,19 @@ class Chair:
                 self.getSample(videoTime, model)
 
         elif someoneJustLeft:
-            logger.info("Someone just left")
+            logger.info(f"{self.id} : Someone just left")
+            if (
+                not self.idVerified
+                and len(self.samples) >= 2
+                and self.verifyNewCustomer()
+            ):
+                self.storeFace(videoTime, model)
             self.cleanLastPersonVariables()
 
         elif someoneIsSitting:
+            logger.info(
+                f"{self.id} : Nb samples : {len(self.samples)}, is verified : {self.idVerified}"
+            )
             if not self.idVerified:
                 if enoughSampleToCheck:
                     self.verifyNewCustomer()
