@@ -1,17 +1,16 @@
-import argparse
 import logging
 import multiprocessing
 import time
 
 import cv2
-import yaml
 import pandas as pd
-from pandas.errors import EmptyDataError
+import yaml
 from deepface import DeepFace
 from deepface.detectors import FaceDetector
-from VideoThread import VideoThread
+from pandas.errors import EmptyDataError
 
 from deepHair.Chair import Chair
+from VideoThread import VideoThread
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -96,7 +95,7 @@ def main():
     of customers in the database again. It then prints the difference between the two numbers, and the
     time it took to run the main function
     """
-
+    start = time.perf_counter()
     try:
         df = pd.read_csv(config["customers file"])
         initial_nb_customer = df.shape[0]

@@ -1,7 +1,7 @@
-from asyncio import create_task
 import itertools
 import logging
-from datetime import date, datetime, time
+from datetime import datetime
+
 import numpy as np
 import yaml
 from deepface import DeepFace
@@ -122,7 +122,7 @@ class Chair:
                 self.timeLastSample = videoTime
                 logger.info(f"{self.id} : Did not detect any face")
 
-    def storeFace(self, videoTime, model):
+    def storeFace(self, videoTime: float, model):
         if videoTime - self.timeLastStore > self.STORAGE_FREQUENCY:
             try:
                 face_repr = DeepFace.represent(
@@ -173,7 +173,14 @@ class Chair:
         self.nbStoredFacesForCurrentCustomer = 0
         self.leftCounter = 0
 
-    def update(self, img, videoTime, model, face_detector):
+    def update(self, img: np.ndarray, videoTime: float, model, face_detector):
+        """
+
+        :param img: the image to be processed
+        :param videoTime: the current time of the video
+        :param model: the model used to detect faces
+        :param face_detector: the face detector object
+        """
 
         self.image = self.__getAreaFromImg(img)
         newState = (
