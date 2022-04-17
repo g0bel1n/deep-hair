@@ -1,0 +1,12 @@
+model_path : 'models'
+faces_bank_path : 'deepHair/face_storage.yml'
+detector_backend : 'retinaface'
+model_name : 'Facenet'
+distance_metric : 'cosine'
+SAMPLING FREQUENCY : 15
+STORAGE FREQUENCY : 15
+NecessaryAmountOfStoredFaces : 3
+NecessaryAmountOfSamples: 3
+nb_frame_to_consider_left : 3
+
+
