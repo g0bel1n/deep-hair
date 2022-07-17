@@ -5,12 +5,16 @@ import time
 import cv2
 import pandas as pd
 import yaml
+import os
 from deepface import DeepFace
 from deepface.detectors import FaceDetector
 from pandas.errors import EmptyDataError
+import numpy as np
+
+
+
 
 from deepHair.Chair import Chair
-from VideoThread import VideoThread
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +58,7 @@ def process_task(camera: dict, config: dict):
 
     :param camera: dict
     :type camera: dict
-    :param config: dict = {
+    :param config: dict 
     :type config: dict
     """
 
@@ -68,12 +72,30 @@ def process_task(camera: dict, config: dict):
         Chair(camera["chairs"][chair], chair, config) for chair in camera["chairs"]
     ]
 
-    videoThread = VideoThread(camera["source"]).start()
+    COLORS = [(255, 0, 0),(0, 0, 255)]
+    #videoThread = VideoThread(camera["source"]).start()
+    videoTime = 0
+    hog = cv2.HOGDescriptor()
+    hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    files = [[cv2.imread(f'samples/{filename}'), int(filename.split('_')[1].split('.')[0])]  for filename in os.listdir('samples') if filename.endswith('jpg')]
+    files.sort(key= lambda x : x[1])
 
-    while not (videoThread.stopped):
+    for img,_ in files:
 
-        frame = videoThread.frame
-        videoTime = videoThread.videoTime
+        frame = img
+        videoTime +=30
+
+# Detecting people in the frame.
+        # gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
+        # boxes, weights = hog.detectMultiScale(frame, winStride = (4, 4), padding = (8, 8), scale = 1.0 )
+
+        # boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
+
+        # for (xA, yA, xB, yB) in boxes:
+        #     # display the detected boxes in the colour picture
+        #     cv2.rectangle(frame, (xA, yA), (xB, yB),
+        #                     (0, 255, 0), 2)
 
         for chair in chairs:
             chair.update(frame, videoTime, model, face_detector)
@@ -81,9 +103,10 @@ def process_task(camera: dict, config: dict):
                 frame,
                 (chair.AREA[2], chair.AREA[0]),
                 (chair.AREA[3], chair.AREA[1]),
-                (255, 0, 0),
+                COLORS[int(chair._Chair__isOccupied)],
                 4,
             )
+            cv2.putText(frame, str(chair.id),(chair.AREA[3], chair.AREA[1]), fontFace=cv2.FONT_ITALIC, fontScale=1, color=(0, 255, 0),thickness=3 )
 
         cv2.imshow("frame", frame)
         cv2.waitKey(1)

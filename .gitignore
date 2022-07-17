@@ -2,4 +2,8 @@
 .deep-hair
 *.pyc
 */__pycache__
-*.DS_Store
+*.DS_StorE
+*.jpg
+*.csv
+*.pptx
+test*.*

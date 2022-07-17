@@ -206,6 +206,7 @@ class Chair:
             mustStoreFace,
         ) = self.getUpdatedConditions(newState=newState)
 
+        self.__isOccupied = someoneIsSitting
         if someoneJustSat:
             logger.info(f"{self.id} : Someone just sat")
             if noStoredFace(self.face_storage):
