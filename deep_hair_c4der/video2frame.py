@@ -6,7 +6,7 @@ import sys
 import time
 
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=3, bar_length=100):
+def print_progress(iteration, total, prefix=None, suffix=None, decimals=3, bar_length=100):
     """
     Call in a loop to create standard out progress bar
     :param iteration: current iteration
@@ -17,6 +17,11 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=3, bar_lengt
     :param bar_length: character length of bar
     :return: None
     """
+    if prefix is None:
+        prefix = ''
+
+    if suffix is None:
+        suffix = ''
 
     format_str = "{0:." + str(decimals) + "f}"  # format the % done number string
     percents = format_str.format(100 * (iteration / float(total)))  # calculate the % done
@@ -119,7 +124,7 @@ def video_to_frames(video_path, frames_dir, overwrite=False, every=1, chunk_size
     prefix_str = "Extracting frames from {}".format(video_filename)  # a prefix string to be printed in progress bar
 
     # execute across multiple cpu cores to speed up processing, get the count automatically
-    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+    with ProcessPoolExecutor(max_workers=max(1, multiprocessing.cpu_count()-2) as executor:
 
         futures = [executor.submit(extract_frames, video_path, frames_dir, overwrite, f[0], f[1], every)
                    for f in frame_chunks]  # submit the processes: extract_frames(...)
