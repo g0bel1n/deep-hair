@@ -108,13 +108,13 @@ def video2data(folder_path: str, output_path: str):
 
     for video_file_path, _ in video_files:
         i = 0
-
-        year = int(video_file_path.split("/")[-1][:4])
-        month = int(video_file_path.split("/")[-1][4:6])
-        day = int(video_file_path.split("/")[-1][6:8])
-        hour = int(video_file_path.split("/")[-1][9:11])
-        minute = int(video_file_path.split("/")[-1][11:13])
-        second = int(video_file_path.split("/")[-1][13:15])
+        time_info = video_file_path.split("/")[-1].split(":")
+        year = int(time_info[:4])
+        month = int(time_info[4:6])
+        day = int(time_info[6:8])
+        hour = int(time_info[9:11])
+        minute = int(time_info[11:13])
+        second = int(time_info[13:15])
 
         start = datetime.datetime(
             year=year, month=month, day=day, hour=hour, minute=minute, second=second
@@ -131,9 +131,9 @@ def video2data(folder_path: str, output_path: str):
         )
         while cap.isOpened():
             ret, frame = cap.read()
-            i += 1
             if ret == False:
                 break
+            
             if i % step == 0:
                 for x, y, width, length in zip(*process_frame(net, frame)):
                     xs.append(x)
@@ -142,7 +142,9 @@ def video2data(folder_path: str, output_path: str):
                     lengths.append(length)
                     timestamps.append(start + datetime.timedelta(seconds=20 * (i // step)))
                 pbar.update(1)
-
+                
+            i += 1
+            
         cap.release()
 
     pd.DataFrame(
