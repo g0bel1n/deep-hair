@@ -108,7 +108,7 @@ def video2data(folder_path: str, output_path: str):
 
     for video_file_path, _ in video_files:
         i = 0
-        time_info = video_file_path.split("/")[-1].split(":")
+        time_info = video_file_path.split("/")[-1]
         year = int(time_info[:4])
         month = int(time_info[4:6])
         day = int(time_info[6:8])
