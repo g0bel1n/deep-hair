@@ -6,3 +6,5 @@ models/coco-names.txt filter=lfs diff=lfs merge=lfs -text
 models/coco.names filter=lfs diff=lfs merge=lfs -text
 models/yolov4-tiny.cfg filter=lfs diff=lfs merge=lfs -text
 models/yolov4-tiny.weights filter=lfs diff=lfs merge=lfs -text
+
+notebooks/** linguist-vendored
