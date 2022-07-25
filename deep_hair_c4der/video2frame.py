@@ -17,10 +17,10 @@ def print_progress(iteration, total, prefix=None, suffix=None, decimals=3, bar_l
     :param bar_length: character length of bar
     :return: None
     """
-    if prefix == None:
+    if prefix is None:
         prefix = ''
 
-    if suffix == None:
+    if suffix is None:
         suffix = ''
 
     format_str = "{0:." + str(decimals) + "f}"  # format the % done number string
