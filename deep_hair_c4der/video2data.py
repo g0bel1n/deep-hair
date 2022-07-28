@@ -160,6 +160,6 @@ def video2data(folder_path: str, output_path: str):
 
 if __name__ == "__main__":
 
-    folder_path = "/Volumes/WD_BLACK/tapo_5_06/constantin/20220628"
-    output_path = "20220628.csv"
+    folder_path = "/Volumes/WD_BLACK/tapo_5_06/lucas/20220702"
+    output_path = "20220702.csv"
     video2data(folder_path=folder_path, output_path=output_path)
